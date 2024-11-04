@@ -127,3 +127,6 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+RECAPTCHA_SECRET_KEY = "6LdXZXUqAAAAAKMfvsoa5f_g_6hgExu4aJJ3XFrw"
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost']

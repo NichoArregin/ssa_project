@@ -45,6 +45,7 @@ def invite_users(request, group_id):
     group = get_object_or_404(Group, id=group_id)
     users_not_in_group = User.objects.exclude(id__in=group.members.values_list('id', flat=True))
     if request.method == 'POST':
+<<<<<<< HEAD
         user_id = request.POST.get('user_id')
         invited_user = get_object_or_404(User, id=user_id)      
         if invited_user in group.invited_users.all():
@@ -80,3 +81,10 @@ def accept_invite(request, group_id):
     else:
         messages.error(request, "Invalid invitation link.")  
     return redirect('chipin:group_detail', group_id=group.id)
+=======
+        email = request.POST.get('email')
+        send_invitation_email(group, email, request)
+        messages.success(request, f'Invitation sent to {email}')
+        return redirect('chipin:group_detail', group_id=group.id)
+    return render(request, 'chipin/invite_users.html', {'group': group, 'users_not_in_group': users_not_in_group})
+>>>>>>> parent of 19785bb (Refactor Invitation Email Notification(Week 4))

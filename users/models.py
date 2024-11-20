@@ -29,6 +29,7 @@ class Profile(models.Model):
     surname = models.CharField(max_length=30)
     nickname = models.CharField(max_length=30, unique=True, null=False, blank=False)
 
+
     def clean(self):
         validate_unique_nickname(self.nickname, instance=self)
 

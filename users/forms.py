@@ -26,3 +26,16 @@ class UserRegistrationForm(UserCreationForm):
             profile.nickname = self.cleaned_data['nickname']
             profile.save()
         return user
+    
+
+class TopUpForm(forms.Form):
+    amount = forms.DecimalField(
+        max_digits=10,  # Maximum total digits in the number
+        decimal_places=2,  # Digits after the decimal point
+        min_value=0.01,  # Ensures a positive amount
+        label="Amount to Top-Up",  # Label displayed in the form
+        error_messages={
+            'min_value': "Please enter an amount greater than $0.00.",
+            'invalid': "Enter a valid amount in dollars and cents.",  # Custom error message for invalid input
+        }
+    )

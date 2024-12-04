@@ -2,8 +2,13 @@
 {% load static %}
 {% block title %}User Management{% endblock %}
 
-{% block content %} 
-    <h2>Welcome {{ request.user.first_name }}</h2>
-    <p>This page is for user management functions.</p>
-    <a href="{% url 'chipin:home' %}">Click through to ChipIn Functions</a>
+{% block content %}
+    <div class="container">
+        <h1>Welcome, {{ user.first_name }}</h1>
+        <h4>Current Balance: ${{ balance }}</h4>
+        <a href="{% url 'users:topup' %}">Top-Up Balance</a>
+        <p>This page is for managing your user account and balance.</p>
+        <!-- Navigation Back to ChipIn Functions -->
+        <a href="{% url 'chipin:home' %}" class="btn btn-secondary">ChipIn Functions</a>
+    </div>
 {% endblock %}

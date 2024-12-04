@@ -5,6 +5,9 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .forms import UserRegistrationForm
+from .forms import TopUpForm
+from .models import Profile, Transaction
+
 
 import requests
 from django.conf import settings
@@ -72,3 +75,40 @@ def logout_view(request):
     logout(request)
     messages.success(request, "Successfully logged out.")
     return redirect('users:login')
+
+def user_view(request):
+    profile = request.user.profile  # Get the logged-in user's profile
+    return render(request, 'users/user.html', {'balance': profile.balance})
+
+def user(request):
+    profile = request.user.profile
+    return render(request, 'users/user.html', {
+        'user': request.user,
+        'balance': profile.balance
+    })
+
+# Top-up balance view function
+def top_up_balance(request):
+    # Check if the request is a POST (form submission)
+    if request.method == 'POST':  
+        form = TopUpForm(request.POST)  # Create a form instance populated with POST data
+        # Validate the form input
+        if form.is_valid():  
+            amount = form.cleaned_data['amount']  # Extract the cleaned amount from the form
+            profile = request.user.profile  # Retrieve the profile associated with the logged-in user
+            profile.balance += amount  # Add the entered amount to the user's current balance
+            profile.save()  # Save the updated profile information to the database
+            # Create a new transaction record for the top-up
+            Transaction.objects.create(user=request.user, amount=amount)  
+            # Add a success message to be displayed to the user
+            messages.success(request, f"Successfully added ${amount:.2f} to your balance!")  
+            return redirect('users:user')  # Redirect to the user profile page
+        else:
+            # Add an error message if the form is invalid
+            messages.error(request, "Invalid input. Please try again.")  
+    else:
+        # If the request is a GET, create an empty form
+        form = TopUpForm()  
+
+    # Render the top-up page with the form
+    return render(request, 'users/top_up_balance.html', {'form': form})  

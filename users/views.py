@@ -8,6 +8,13 @@ from .forms import UserRegistrationForm
 from .forms import TopUpForm
 from .models import Profile, Transaction
 
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib import messages
+from django.db import transaction
+from chipin.models import Event
+from users.models import Profile, Transaction
+from users.models import Transaction
+
 
 import requests
 from django.conf import settings
@@ -54,9 +61,14 @@ def register(request):
         form = UserRegistrationForm()
     return render(request, 'users/register.html', {'form': form})
 
-@login_required(login_url='users:login')
+@login_required
 def user(request):
-    return render(request, "users/user.html")
+    transactions = Transaction.objects.filter(user=request.user).order_by('-created_at')
+    return render(request, "users/user.html", {
+        'user': request.user,
+        'balance': request.user.profile.balance,
+        'transactions': transactions,
+    })
 
 def login_view(request):
     if request.method == "POST":
@@ -112,3 +124,43 @@ def top_up_balance(request):
 
     # Render the top-up page with the form
     return render(request, 'users/top_up_balance.html', {'form': form})  
+
+@transaction.atomic
+def transfer_funds(request, group_id, event_id):
+    # Get the event and ensure it’s valid
+    event = get_object_or_404(Event, id=event_id, group_id=group_id)
+    if event.archived:
+        messages.error(request, "This event is already archived.")
+        return redirect('chipin:group_detail', group_id=group_id)
+
+    # Ensure the current user is the group admin
+    if request.user != event.group.admin:
+        messages.error(request, "You are not authorized to transfer funds for this event.")
+        return redirect('chipin:group_detail', group_id=group_id)
+
+    # Calculate shares and validate balances
+    members = event.group.members.exclude(id=request.user.id)
+    total_share = 0
+    for member in members:
+        profile = member.profile
+        share = event.share_amount
+        if profile.balance < share:
+            messages.error(request, f"{member.username} has insufficient balance.")
+            return redirect('chipin:group_detail', group_id=group_id)
+        profile.balance -= share
+        profile.save()
+        total_share += share
+        Transaction.objects.create(user=member, event=event, amount=-share)
+
+    # Update the admin's balance and log the transaction
+    admin_profile = request.user.profile
+    admin_profile.balance += total_share
+    admin_profile.save()
+    Transaction.objects.create(user=request.user, event=event, amount=total_share)
+
+    # Archive the event
+    event.archived = True
+    event.save()
+
+    messages.success(request, "Funds transferred successfully and the event has been archived.")
+    return redirect('chipin:group_detail', group_id=group_id)

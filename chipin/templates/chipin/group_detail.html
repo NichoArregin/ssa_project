@@ -98,6 +98,14 @@
             </li>
         {% endfor %}
     </ul>
-    
+
+    {% if request.user == group.admin and event.status == 'Active' %}
+    <a href="{% url 'chipin:transfer_funds' group.id event.id %}" class="btn btn-success" onclick="return confirm('Transfer funds for this event? This action is irreversible.');">
+        Transfer Funds
+    </a>
+{% elif event.status == 'Archived' %}
+    <p>This event is archived, and no further actions are allowed.</p>
+{% endif %}
+
 {% endblock %}
 
